@@ -1,15 +1,28 @@
 import time
-
+import random
 import redis
 
 r = redis.Redis(host="localhost", port=6379, decode_responses=True)
+service_list = ["checkout","auth","search"]
 
-metric = {
-    "service": "checkout",
-    "latency_ms": 120.5,
-    "error_rate": 0.01,
-    "timestamp": time.time(),
-}
 
-message_id = r.xadd("metrics", metric)
-print("Sent", metric, "as", message_id)
+def make_metric(service):
+    latency = random.gauss(120,15)
+    error_rate = max(0,random.gauss(0.01,0.005))
+    if random.random() < 0.02:
+        latency = latency * 5
+        error_rate = 0.3
+    return {
+        "service": service,          
+        "latency_ms": round(latency,2),
+        "error_rate": round(error_rate,4),
+        "timestamp": time.time(),
+    }
+
+
+while True:
+    for service in service_list:
+        metric = make_metric(service)
+        message_id = r.xadd("metrics", metric)
+        print("Sent", metric, "as", message_id)
+    time.sleep(1)
