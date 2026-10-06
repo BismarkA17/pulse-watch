@@ -13,4 +13,6 @@ def test_z_score_thirty_two_wobble_above():
     result = z_score(600, [105, 135])
     assert result == pytest.approx(32)
 
-    
+def test_z_score_flat_history_returns_zero():
+    result = z_score(130,[120,120,120])
+    assert result == pytest.approx(0)
