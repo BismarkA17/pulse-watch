@@ -1,5 +1,6 @@
 import redis 
 import psycopg
+from pulsewatch.detection import is_anomaly
 
 conn = psycopg.connect(
     "postgresql://pulsewatch:pulsewatch@localhost:5432/pulsewatch",
@@ -9,6 +10,7 @@ conn = psycopg.connect(
 
 r = redis.Redis(host="localhost", port=6379, decode_responses=True)
 last_id = "$"
+histories = {}
 
 while True:
     response = r.xread({"metrics": last_id}, block=5000)
@@ -25,6 +27,16 @@ while True:
                 "VALUES (%s, %s, %s, to_timestamp(%s))",
                 (service, latency, error_rate, timestamp),
             )
+            if service not in histories:
+                histories[service] = []
+            history = histories[service]
+
+            if is_anomaly(latency, history):
+                print (f"Anomaly detected: {service}  {latency}")
+            history.append(latency)
+            if len(history) > 30 : 
+                history.pop(0)
+            
             print("Saved", service, latency, error_rate)
             last_id = message_id
 
