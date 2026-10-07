@@ -47,3 +47,19 @@ def acknowledge_incident(incident_id: int):
         ("acknowledged", incident_id),
     ).fetchone()
     return updated 
+
+@app.post("/incidents/{incident_id}/resolve")
+def resolve_incident(incident_id: int):
+    incident = conn.execute(
+        "SELECT * FROM incidents WHERE id = %s",
+        (incident_id,),
+    ).fetchone()
+    if incident is None:
+        raise HTTPException(status_code=404, detail = "Incident not found")
+    if incident["status"] == "resolved":
+        raise HTTPException(status_code=409, detail ="Incident is already resolved")
+    updated = conn.execute(
+        "UPDATE incidents SET status = %s WHERE id = %s RETURNING *",
+        ("resolved", incident_id),
+    ).fetchone()
+    return updated 
