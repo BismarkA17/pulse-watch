@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI , HTTPException
 import psycopg 
 from psycopg.rows import dict_row
 
@@ -20,3 +20,14 @@ def list_incidents():
         "SELECT * FROM incidents ORDER BY id DESC"
     ).fetchall()
     return rows 
+
+@app.get("/incidents/{incident_id}")
+def get_incident(incident_id: int):
+    incident = conn.execute(
+        "SELECT * FROM incidents WHERE id = %s",
+        (incident_id,),
+    ).fetchone()
+    if incident is None:
+        raise HTTPException(status_code=404, detail = "Incident not found")
+    else:
+        return incident 
