@@ -9,7 +9,7 @@ def z_score(value, history):
     return (value - avg) / wobble
 
 def is_anomaly(value, history):
-    if len(history) < 5 :
+    if len(history) < 20 :
         return False
     z = z_score (value, history)
     if abs(z) > 3 :

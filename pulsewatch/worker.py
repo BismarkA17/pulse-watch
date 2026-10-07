@@ -33,6 +33,11 @@ while True:
 
             if is_anomaly(latency, history):
                 print (f"Anomaly detected: {service}  {latency}")
+                conn.execute(
+                    "INSERT INTO incidents(service, latency_ms)"
+                    "VALUES(%s, %s)",
+                    (service,latency)
+                )
             history.append(latency)
             if len(history) > 30 : 
                 history.pop(0)

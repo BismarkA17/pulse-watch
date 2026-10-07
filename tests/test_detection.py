@@ -19,15 +19,15 @@ def test_z_score_flat_history_returns_zero():
     assert result == pytest.approx(0)
 
 def test_is_anamoly_big_spike():
-    result = is_anomaly(600,[105, 135, 105, 135, 105, 135])
+    result = is_anomaly(600,[105, 135] * 10)
     assert result == True 
 
 def test_is_anamoly_normal_value():
-    result = is_anomaly(135,[105, 135, 105, 135, 105, 135])
+    result = is_anomaly(135,[105, 135] * 10)
     assert result == False
 
 def test_is_anomaly_big_drop():
-    result = is_anomaly(30,[105, 135, 105, 135, 105, 135])
+    result = is_anomaly(30,[105, 135] * 10)
     assert result  == True
 
 def test_is_anamoly_insufficient_history():
