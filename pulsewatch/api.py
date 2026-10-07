@@ -31,3 +31,19 @@ def get_incident(incident_id: int):
         raise HTTPException(status_code=404, detail = "Incident not found")
     else:
         return incident 
+
+@app.post("/incidents/{incident_id}/acknowledge")
+def acknowledge_incident(incident_id: int):
+    incident = conn.execute(
+        "SELECT * FROM incidents WHERE id = %s",
+        (incident_id,),
+    ).fetchone()
+    if incident is None:
+        raise HTTPException(status_code=404, detail = "Incident not found")
+    if incident["status"] != "open":
+        raise HTTPException(status_code=409, detail ="Only open incidents can be acknowledged!")
+    updated = conn.execute(
+        "UPDATE incidents SET status = %s WHERE id = %s RETURNING *",
+        ("acknowledged", incident_id),
+    ).fetchone()
+    return updated 
