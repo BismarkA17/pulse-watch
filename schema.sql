@@ -1,8 +1,16 @@
-CREATE TABLE metrics(
+CREATE TABLE IF NOT EXISTS metrics(
     id SERIAL PRIMARY KEY,
     service  TEXT NOT NULL,
     latency_ms DOUBLE PRECISION NOT NULL,
     error_rate DOUBLE PRECISION NOT NULL,
     recorded_at TIMESTAMPTZ NOT NULL 
 
+);
+
+CREATE TABLE IF NOT EXISTS incidents (
+    id SERIAL PRIMARY KEY,
+    service TEXT NOT NULL,
+    latency_ms DOUBLE PRECISION NOT NULL,
+    status TEXT NOT NULL DEFAULT 'open',
+    detected_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
