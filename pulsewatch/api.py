@@ -31,6 +31,16 @@ def get_incident(incident_id: int):
         raise HTTPException(status_code=404, detail = "Incident not found")
     else:
         return incident 
+    
+@app.get("/metrics")
+def list_metrics(limit: int = 50):
+    metrics = conn.execute(
+        "SELECT * FROM metrics ORDER BY id DESC LIMIT %s",
+        (limit,)
+
+    ).fetchall()
+    return metrics
+
 
 @app.post("/incidents/{incident_id}/acknowledge")
 def acknowledge_incident(incident_id: int):
@@ -63,3 +73,5 @@ def resolve_incident(incident_id: int):
         ("resolved", incident_id),
     ).fetchone()
     return updated 
+
+
