@@ -74,4 +74,10 @@ def test_resolve_missing_incident():
     response = client.post("/incidents/999999/resolve")
     assert response.status_code == 404
 
+def test_metrics_limit_too_small():
+    response = client.get("/metrics?limit=0")
+    assert response.status_code == 422 
 
+def test_metrics_limit_too_large():
+    response = client.get("/metrics?limit=1000")
+    assert response.status_code == 422 

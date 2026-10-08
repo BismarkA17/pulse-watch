@@ -1,4 +1,4 @@
-from fastapi import FastAPI , HTTPException
+from fastapi import FastAPI , HTTPException , Query 
 import psycopg 
 from psycopg.rows import dict_row
 from pulsewatch.config import DATABASE_URL
@@ -34,7 +34,7 @@ def get_incident(incident_id: int):
         return incident 
     
 @app.get("/metrics")
-def list_metrics(limit: int = 50):
+def list_metrics(limit: int = Query(50, ge=1, le=500)):
     metrics = conn.execute(
         "SELECT * FROM metrics ORDER BY id DESC LIMIT %s",
         (limit,)
@@ -74,5 +74,4 @@ def resolve_incident(incident_id: int):
         ("resolved", incident_id),
     ).fetchone()
     return updated 
-
 
