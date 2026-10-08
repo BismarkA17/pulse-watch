@@ -25,9 +25,15 @@ def test_incident_id_must_be_a_number():
     assert response.status_code == 422 
 
 def test_metrics_limit():
+    for i in range(5):
+        conn.execute(
+            "INSERT INTO metrics (service, latency_ms, error_rate, recorded_at) "
+            "VALUES (%s, %s, %s, now())",
+            ("test", 100.0, 0.01),
+        )
     response = client.get("/metrics?limit=3")
-    assert response.status_code == 200 
-    assert len(response.json()) == 3 
+    assert response.status_code == 200
+    assert len(response.json()) == 3
 
 def test_incident_lifecycle():
     incident_id = conn.execute(
