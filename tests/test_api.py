@@ -37,9 +37,13 @@ def test_incident_lifecycle():
         ("test", 999.0)      
     ).fetchone()["id"]
 
-    response = client.post(f"/incidents/{incident_id}/acknowledge")
+    response = client.get(f"/incidents/{incident_id}")
     assert response.status_code == 200
-    assert response.json()["status"] == "acknowledged"
+    assert response.json()["status"] == "open"
+
+    response_1 = client.post(f"/incidents/{incident_id}/acknowledge")
+    assert response_1.status_code == 200
+    assert response_1.json()["status"] == "acknowledged"
 
     response_2 = client.post(f"/incidents/{incident_id}/acknowledge")
     assert response_2.status_code == 409 
@@ -56,6 +60,12 @@ def test_incident_lifecycle():
         (incident_id,)
     )
 
+def test_acknowledge_missing_incident():
+    response = client.post("/incidents/999999/acknowledge")
+    assert response.status_code == 404
 
+def test_resolve_missing_incident():
+    response = client.post("/incidents/999999/resolve")
+    assert response.status_code == 404
 
 
