@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from pulsewatch.api import app
+from pulsewatch.api import app, conn
 
 client = TestClient(app)
 
@@ -28,3 +28,34 @@ def test_metrics_limit():
     response = client.get("/metrics?limit=3")
     assert response.status_code == 200 
     assert len(response.json()) == 3 
+
+def test_incident_lifecycle():
+    incident_id = conn.execute(
+        "INSERT INTO incidents (service, latency_ms)"
+        "VALUES(%s, %s) "
+        "RETURNING id",
+        ("test", 999.0)      
+    ).fetchone()["id"]
+
+    response = client.post(f"/incidents/{incident_id}/acknowledge")
+    assert response.status_code == 200
+    assert response.json()["status"] == "acknowledged"
+
+    response_2 = client.post(f"/incidents/{incident_id}/acknowledge")
+    assert response_2.status_code == 409 
+
+    response_3 = client.post(f"/incidents/{incident_id}/resolve")
+    assert response_3.status_code == 200 
+    assert response_3.json()["status"] == "resolved"
+
+    response_4 = client.post(f"/incidents/{incident_id}/resolve")
+    assert response_4.status_code == 409
+
+    delete_incident_id = conn.execute(
+        "DELETE FROM incidents WHERE id = %s",
+        (incident_id,)
+    )
+
+
+
+
