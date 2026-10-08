@@ -1,8 +1,9 @@
 import time
 import random
 import redis
+from pulsewatch.config import REDIS_URL
 
-r = redis.Redis(host="localhost", port=6379, decode_responses=True)
+r = redis.Redis.from_url(REDIS_URL, decode_responses=True)
 service_list = ["checkout","auth","search"]
 
 

@@ -1,11 +1,12 @@
 from fastapi import FastAPI , HTTPException
 import psycopg 
 from psycopg.rows import dict_row
+from pulsewatch.config import DATABASE_URL
 
 app = FastAPI(title = "Pulsewatch")
 
 conn = psycopg.connect(
-    "postgresql://pulsewatch:pulsewatch@localhost:5432/pulsewatch",
+    DATABASE_URL,
     autocommit=True,
     row_factory=dict_row,
 )

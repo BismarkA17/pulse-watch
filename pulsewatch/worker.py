@@ -1,14 +1,15 @@
 import redis 
 import psycopg
 from pulsewatch.detection import is_anomaly
+from pulsewatch.config import DATABASE_URL, REDIS_URL
 
 conn = psycopg.connect(
-    "postgresql://pulsewatch:pulsewatch@localhost:5432/pulsewatch",
+    DATABASE_URL,
     autocommit=True,
 )
 
 
-r = redis.Redis(host="localhost", port=6379, decode_responses=True)
+r = redis.Redis.from_url(REDIS_URL, decode_responses=True)
 last_id = "$"
 histories = {}
 
