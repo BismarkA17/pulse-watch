@@ -15,6 +15,28 @@ def update_history(history, value):
     if len(history) > 30 :
         history.pop(0)
 
+def process_message(conn, histories, fields):
+    service, latency, error_rate, timestamp = parse_message(fields)
+    conn.execute(
+        "INSERT INTO metrics(service, latency_ms, error_rate, recorded_at)"
+        "VALUES (%s, %s, %s, to_timestamp(%s))",
+        (service, latency, error_rate, timestamp),
+    )
+    if service not in histories:
+        histories[service] = []
+    history = histories[service]
+    
+    if is_anomaly(latency, history):
+        print (f"Anomaly detected: {service}  {latency}")
+        conn.execute(
+            "INSERT INTO incidents(service, latency_ms)"
+            "VALUES(%s, %s)",
+            (service,latency)
+        )
+    update_history(history, latency)
+    print("Saved", service, latency, error_rate)
+
+
 
 def main():
 
@@ -32,25 +54,7 @@ def main():
         response = r.xread({"metrics": last_id}, block=5000)
         for stream_name, messages in response :
             for message_id, fields in messages :
-                service, latency, error_rate, timestamp = parse_message(fields)
-                conn.execute(
-                    "INSERT INTO metrics(service, latency_ms, error_rate, recorded_at)"
-                    "VALUES (%s, %s, %s, to_timestamp(%s))",
-                    (service, latency, error_rate, timestamp),
-                )
-                if service not in histories:
-                    histories[service] = []
-                history = histories[service]
-
-                if is_anomaly(latency, history):
-                    print (f"Anomaly detected: {service}  {latency}")
-                    conn.execute(
-                        "INSERT INTO incidents(service, latency_ms)"
-                        "VALUES(%s, %s)",
-                        (service,latency)
-                    )
-                update_history(history, latency)
-                print("Saved", service, latency, error_rate)
+                process_message(conn, histories, fields)
                 last_id = message_id
 
 if __name__ == "__main__":
