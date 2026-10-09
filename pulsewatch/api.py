@@ -11,6 +11,16 @@ conn = psycopg.connect(
     row_factory=dict_row,
 )
 
+def fetch_incident_or_404(incident_id: int):
+    incident = conn.execute(
+        "SELECT * FROM incidents WHERE id = %s",
+        (incident_id,),
+    ).fetchone()
+    if incident is None:
+        raise HTTPException(status_code=404, detail = "Incident not found")
+    return incident
+
+
 @app.get("/health")
 def health():
     return{"status": "ok"}
@@ -24,14 +34,8 @@ def list_incidents():
 
 @app.get("/incidents/{incident_id}")
 def get_incident(incident_id: int):
-    incident = conn.execute(
-        "SELECT * FROM incidents WHERE id = %s",
-        (incident_id,),
-    ).fetchone()
-    if incident is None:
-        raise HTTPException(status_code=404, detail = "Incident not found")
-    else:
-        return incident 
+    incident = fetch_incident_or_404(incident_id)
+    return incident 
     
 @app.get("/metrics")
 def list_metrics(limit: int = Query(50, ge=1, le=500)):
@@ -45,12 +49,7 @@ def list_metrics(limit: int = Query(50, ge=1, le=500)):
 
 @app.post("/incidents/{incident_id}/acknowledge")
 def acknowledge_incident(incident_id: int):
-    incident = conn.execute(
-        "SELECT * FROM incidents WHERE id = %s",
-        (incident_id,),
-    ).fetchone()
-    if incident is None:
-        raise HTTPException(status_code=404, detail = "Incident not found")
+    incident = fetch_incident_or_404(incident_id)
     if incident["status"] != "open":
         raise HTTPException(status_code=409, detail ="Only open incidents can be acknowledged!")
     updated = conn.execute(
@@ -61,12 +60,7 @@ def acknowledge_incident(incident_id: int):
 
 @app.post("/incidents/{incident_id}/resolve")
 def resolve_incident(incident_id: int):
-    incident = conn.execute(
-        "SELECT * FROM incidents WHERE id = %s",
-        (incident_id,),
-    ).fetchone()
-    if incident is None:
-        raise HTTPException(status_code=404, detail = "Incident not found")
+    incident = fetch_incident_or_404(incident_id)
     if incident["status"] == "resolved":
         raise HTTPException(status_code=409, detail ="Incident is already resolved")
     updated = conn.execute(
