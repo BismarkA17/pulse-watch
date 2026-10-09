@@ -3,7 +3,15 @@ import random
 import redis
 from pulsewatch.config import REDIS_URL
 
-r = redis.Redis.from_url(REDIS_URL, decode_responses=True)
+def main():
+    r = redis.Redis.from_url(REDIS_URL, decode_responses=True)
+    while True:
+        for service in service_list:
+            metric = make_metric(service)
+            message_id = r.xadd("metrics", metric)
+            print("Sent", metric, "as", message_id)
+        time.sleep(1)
+
 service_list = ["checkout","auth","search"]
 
 
@@ -20,10 +28,5 @@ def make_metric(service):
         "timestamp": time.time(),
     }
 
-
-while True:
-    for service in service_list:
-        metric = make_metric(service)
-        message_id = r.xadd("metrics", metric)
-        print("Sent", metric, "as", message_id)
-    time.sleep(1)
+if __name__ == "__main__":
+    main()
