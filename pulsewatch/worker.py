@@ -3,48 +3,56 @@ import psycopg
 from pulsewatch.detection import is_anomaly
 from pulsewatch.config import DATABASE_URL, REDIS_URL
 
-conn = psycopg.connect(
-    DATABASE_URL,
-    autocommit=True,
-)
+def parse_message(fields):
+    service = fields["service"]
+    latency = float(fields["latency_ms"])
+    error_rate = float(fields["error_rate"])
+    timestamp = float(fields["timestamp"])
+    return service, latency, error_rate, timestamp
 
 
-r = redis.Redis.from_url(REDIS_URL, decode_responses=True)
-last_id = "$"
-histories = {}
+def main():
 
-while True:
-    response = r.xread({"metrics": last_id}, block=5000)
-    for stream_name, messages in response :
-        for message_id, fields in messages :
-            service = fields["service"]
-            latency = float(fields["latency_ms"])
-            error_rate = float(fields["error_rate"])
-            timestamp = float(fields["timestamp"])
+    conn = psycopg.connect(
+        DATABASE_URL,
+        autocommit=True,
+    )
 
 
-            conn.execute(
-                "INSERT INTO metrics(service, latency_ms, error_rate, recorded_at)"
-                "VALUES (%s, %s, %s, to_timestamp(%s))",
-                (service, latency, error_rate, timestamp),
-            )
-            if service not in histories:
-                histories[service] = []
-            history = histories[service]
+    r = redis.Redis.from_url(REDIS_URL, decode_responses=True)
+    last_id = "$"
+    histories = {}
 
-            if is_anomaly(latency, history):
-                print (f"Anomaly detected: {service}  {latency}")
+    while True:
+        response = r.xread({"metrics": last_id}, block=5000)
+        for stream_name, messages in response :
+            for message_id, fields in messages :
+                service, latency, error_rate, timestamp = parse_message(fields)
                 conn.execute(
-                    "INSERT INTO incidents(service, latency_ms)"
-                    "VALUES(%s, %s)",
-                    (service,latency)
+                    "INSERT INTO metrics(service, latency_ms, error_rate, recorded_at)"
+                    "VALUES (%s, %s, %s, to_timestamp(%s))",
+                    (service, latency, error_rate, timestamp),
                 )
-            history.append(latency)
-            if len(history) > 30 : 
-                history.pop(0)
-            
-            print("Saved", service, latency, error_rate)
-            last_id = message_id
+                if service not in histories:
+                    histories[service] = []
+                history = histories[service]
+
+                if is_anomaly(latency, history):
+                    print (f"Anomaly detected: {service}  {latency}")
+                    conn.execute(
+                        "INSERT INTO incidents(service, latency_ms)"
+                        "VALUES(%s, %s)",
+                        (service,latency)
+                    )
+                history.append(latency)
+                if len(history) > 30 : 
+                    history.pop(0)
+                
+                print("Saved", service, latency, error_rate)
+                last_id = message_id
+
+if __name__ == "__main__":
+    main()
 
 
 
