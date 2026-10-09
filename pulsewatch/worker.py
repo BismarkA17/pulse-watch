@@ -10,6 +10,11 @@ def parse_message(fields):
     timestamp = float(fields["timestamp"])
     return service, latency, error_rate, timestamp
 
+def update_history(history, value):
+    history.append(value)
+    if len(history) > 30 :
+        history.pop(0)
+
 
 def main():
 
@@ -44,10 +49,7 @@ def main():
                         "VALUES(%s, %s)",
                         (service,latency)
                     )
-                history.append(latency)
-                if len(history) > 30 : 
-                    history.pop(0)
-                
+                update_history(history, latency)
                 print("Saved", service, latency, error_rate)
                 last_id = message_id
 
