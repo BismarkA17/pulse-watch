@@ -1,6 +1,6 @@
-from pulsewatch.worker import parse_message, update_history, process_message
+from pulsewatch.worker import parse_message, update_history, process_message , next_delay
 from pulsewatch.api import conn
-import pytest
+import pytest 
 
 
 def test_parse_message_converts_strings_to_numbers():
@@ -75,3 +75,8 @@ def test_parse_message_not_a_number():
             }
     with pytest.raises(ValueError):
         parse_message(fields)
+
+def test_next_delay_doubled_and_caps_at_30():
+    assert next_delay(1) == 2 
+    assert next_delay(8) == 16
+    assert next_delay(20) == 30

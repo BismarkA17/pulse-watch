@@ -1,5 +1,6 @@
 import redis 
 import psycopg
+import time
 from pulsewatch.detection import is_anomaly
 from pulsewatch.config import DATABASE_URL, REDIS_URL
 
@@ -36,9 +37,10 @@ def process_message(conn, histories, fields):
     update_history(history, latency)
     print("Saved", service, latency, error_rate)
 
+def next_delay(delay):
+    return min(delay * 2, 30)
 
-
-def main():
+def run_worker():  # pragma: no cover
 
     conn = psycopg.connect(
         DATABASE_URL,
@@ -65,6 +67,18 @@ def main():
                     print(f"Skipping bad message {message_id}: {error}")
                 r.xack("metrics", "workers", message_id)
         read_id = ">"
+
+def main():  # pragma: no cover
+    delay = 1
+    while True:
+        try:
+            run_worker()
+        except (redis.exceptions.ConnectionError,
+                redis.exceptions.TimeoutError,
+                psycopg.OperationalError) as error:
+            print(f"Lost connection: {error}. Retrying in {delay}s")
+            time.sleep(delay)
+            delay = next_delay(delay)
 
 if __name__ == "__main__":
     main()

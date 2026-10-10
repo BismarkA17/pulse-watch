@@ -3,7 +3,7 @@ import random
 import redis
 from pulsewatch.config import REDIS_URL
 
-def main():
+def main():  # pragma: no cover
     r = redis.Redis.from_url(REDIS_URL, decode_responses=True)
     while True:
         for service in service_list:
