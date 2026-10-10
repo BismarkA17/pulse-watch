@@ -46,7 +46,7 @@ def main():
     )
 
 
-    r = redis.Redis.from_url(REDIS_URL, decode_responses=True)
+    r = redis.Redis.from_url(REDIS_URL, decode_responses=True, socket_timeout=10)
     try:
         r.xgroup_create("metrics", "workers", id="$", mkstream=True)
     except redis.exceptions.ResponseError:
