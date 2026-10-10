@@ -47,15 +47,20 @@ def main():
 
 
     r = redis.Redis.from_url(REDIS_URL, decode_responses=True)
-    last_id = "$"
+    try:
+        r.xgroup_create("metrics", "workers", id="$", mkstream=True)
+    except redis.exceptions.ResponseError:
+        pass
+
+    #last_id = "$"
     histories = {}
 
     while True:
-        response = r.xread({"metrics": last_id}, block=5000)
+        response = r.xreadgroup("workers", "worker-1", {"metrics": ">"}, block=5000)
         for stream_name, messages in response :
             for message_id, fields in messages :
                 process_message(conn, histories, fields)
-                last_id = message_id
+                r.xack("metrics", "workers", message_id)
 
 if __name__ == "__main__":
     main()
