@@ -1,5 +1,6 @@
 from pulsewatch.worker import parse_message, update_history, process_message
 from pulsewatch.api import conn
+import pytest
 
 
 def test_parse_message_converts_strings_to_numbers():
@@ -55,3 +56,22 @@ def test_spike_after_warmup_creates_incident():
     incident = conn.execute("SELECT * FROM incidents").fetchone()
     assert incident["service"] == "auth"
     assert incident["status"] == "open"
+
+def test_parse_message_missing_field():
+    fields = {
+                "service": "auth",
+                "error_rate": "0.01",
+                "timestamp": "1700000000.0",
+            }
+    with pytest.raises(KeyError):
+        parse_message(fields)
+
+def test_parse_message_not_a_number():
+    fields = {
+                "service": "auth",
+                "latency_ms": "abc",
+                "error_rate": "0.01",
+                "timestamp": "1700000000.0",
+            }
+    with pytest.raises(ValueError):
+        parse_message(fields)

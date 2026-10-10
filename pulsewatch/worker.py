@@ -59,7 +59,10 @@ def main():
         response = r.xreadgroup("workers", "worker-1", {"metrics": read_id}, block=5000)
         for stream_name, messages in response :
             for message_id, fields in messages :
-                process_message(conn, histories, fields)
+                try:
+                    process_message(conn, histories, fields)
+                except (KeyError, ValueError) as error:
+                    print(f"Skipping bad message {message_id}: {error}")
                 r.xack("metrics", "workers", message_id)
         read_id = ">"
 
