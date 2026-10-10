@@ -52,15 +52,16 @@ def main():
     except redis.exceptions.ResponseError:
         pass
 
-    #last_id = "$"
     histories = {}
 
+    read_id = "0"
     while True:
-        response = r.xreadgroup("workers", "worker-1", {"metrics": ">"}, block=5000)
+        response = r.xreadgroup("workers", "worker-1", {"metrics": read_id}, block=5000)
         for stream_name, messages in response :
             for message_id, fields in messages :
                 process_message(conn, histories, fields)
                 r.xack("metrics", "workers", message_id)
+        read_id = ">"
 
 if __name__ == "__main__":
     main()
