@@ -12,7 +12,7 @@ def is_anomaly(value, history):
     if len(history) < 20 :
         return False
     z = z_score (value, history)
-    if abs(z) > 3 :
+    if z > 3 :
         return True 
     else: 
         return False

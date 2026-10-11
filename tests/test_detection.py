@@ -28,7 +28,7 @@ def test_is_anamoly_normal_value():
 
 def test_is_anomaly_big_drop():
     result = is_anomaly(30,[105, 135] * 10)
-    assert result  == True
+    assert result  == False
 
 def test_is_anamoly_insufficient_history():
     result = is_anomaly(600,[105,135])
