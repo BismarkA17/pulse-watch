@@ -12,20 +12,31 @@ It runs 24/7 on AWS EC2 as five Docker containers, with no data loss when parts 
 
 ## Results
 
-Measured on the live EC2 deployment over 12 hours of continuous operation:
+Measured on the live EC2 deployment with the current detector, over 22.7 hours of continuous operation:
 
 | Metric | Result |
 |---|---|
-| Readings processed | **131,403** (about 3 per second) |
-| Injected latency spikes | **2,591** |
-| Spikes detected | **96.8%** (2,509) |
-| False-positive rate | **0.39%** (496 of 128,812 normal readings) |
+| Readings processed | **244,668** (about 3 per second) |
+| Injected latency spikes | **4,812** |
+| Spikes detected | **96.9%** (4,664) |
+| False-positive rate | **0.21%** (496 of 239,856 normal readings) |
+| Alerts that were real incidents | **90.4%** |
 | Automatic recovery after a server reboot | Yes |
 | Messages lost across crashes and outages | **0** (verified by failure-injection tests) |
 
 **How these are measured:** every injected spike carries an error rate of exactly 0.3, while normal readings sit around 0.01. That gives ground truth, so detection rate and false positives are counted exactly with SQL against the production database, not estimated.
 
-**What the measurement led to:** almost half the false alarms (244 of 496) were readings that were unusually *fast*, which nobody would ever page an engineer for. The detector was changed to alert only on high-side deviations. Re-measurement with the new rule is in progress.
+### Tuning the detector with production data
+
+The first version alerted on any reading more than 3 standard deviations from the mean, in either direction. Over its first 12 hours (131,403 readings) it caught 96.8% of spikes, but almost half of its false alarms (244 of 496) were readings that were unusually *fast*, which nobody needs to be paged for. The detector was switched to alert on high-side deviations only:
+
+| | Two-sided (first 12 h) | One-sided (next 22.7 h) |
+|---|---|---|
+| False-positive rate | 0.39% | **0.21%** (46% lower) |
+| Alerts that were real incidents | 83.5% | **90.4%** |
+| Spikes detected | 96.8% | 96.9% |
+
+Same detection rate, almost half the false alarms.
 
 ---
 
